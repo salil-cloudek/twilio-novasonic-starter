@@ -109,3 +109,34 @@ variable "environment" {
   type        = string
   default     = "prod"
 }
+
+# Knowledge Base and Agent configuration variables
+variable "knowledge_base_arns" {
+  description = "List of Bedrock Knowledge Base ARNs that the service can access. Use ['*'] for all knowledge bases."
+  type        = list(string)
+  default     = []
+}
+
+variable "knowledge_base_id" {
+  description = "Primary Bedrock Knowledge Base ID for the application"
+  type        = string
+  default     = null
+}
+
+variable "agent_arns" {
+  description = "List of Bedrock Agent ARNs that the service can invoke. Use ['*'] for all agents."
+  type        = list(string)
+  default     = []
+}
+
+variable "agent_id" {
+  description = "Primary Bedrock Agent ID for the application"
+  type        = string
+  default     = null
+}
+
+variable "agent_alias_id" {
+  description = "Primary Bedrock Agent Alias ID for the application"
+  type        = string
+  default     = null
+}
