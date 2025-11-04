@@ -231,9 +231,9 @@ variable "knowledge_base_auto_ingestion_prefix" {
 }
 
 variable "knowledge_base_s3_inclusion_prefixes" {
-  description = "List of S3 prefixes to include in the knowledge base data source"
+  description = "List of S3 prefixes to include in the knowledge base data source. Use ['documents/'] as default or omit to include entire bucket."
   type        = list(string)
-  default     = []
+  default     = ["documents/"]
 }
 
 variable "knowledge_base_chunking_strategy" {
@@ -300,13 +300,13 @@ variable "agent_alias_name" {
 variable "agent_action_groups" {
   description = "List of action groups for the agent"
   type = list(object({
-    name                           = string
-    description                    = string
-    state                         = optional(string, "ENABLED")
-    lambda_function_arn           = optional(string)
-    api_schema                    = optional(string)
-    create_lambda_function        = optional(bool, false)
-    lambda_function_code          = optional(string)
+    name                         = string
+    description                  = string
+    state                        = optional(string, "ENABLED")
+    lambda_function_arn          = optional(string)
+    api_schema                   = optional(string)
+    create_lambda_function       = optional(bool, false)
+    lambda_function_code         = optional(string)
     lambda_handler               = optional(string, "index.handler")
     lambda_runtime               = optional(string, "python3.11")
     lambda_timeout               = optional(number, 30)
@@ -318,16 +318,16 @@ variable "agent_action_groups" {
 variable "agent_prompt_override_configuration" {
   description = "Prompt override configuration for the agent"
   type = object({
-    base_prompt_template    = string
-    maximum_length         = optional(number, 2048)
-    stop_sequences         = optional(list(string), [])
-    temperature           = optional(number, 0.7)
-    top_k                 = optional(number, 250)
-    top_p                 = optional(number, 0.999)
-    parser_mode           = optional(string, "DEFAULT")
-    prompt_creation_mode  = optional(string, "OVERRIDDEN")
-    prompt_state          = optional(string, "ENABLED")
-    prompt_type           = optional(string, "ORCHESTRATION")
+    base_prompt_template = string
+    maximum_length       = optional(number, 2048)
+    stop_sequences       = optional(list(string), [])
+    temperature          = optional(number, 0.7)
+    top_k                = optional(number, 250)
+    top_p                = optional(number, 0.999)
+    parser_mode          = optional(string, "DEFAULT")
+    prompt_creation_mode = optional(string, "OVERRIDDEN")
+    prompt_state         = optional(string, "ENABLED")
+    prompt_type          = optional(string, "ORCHESTRATION")
   })
   default = null
 }

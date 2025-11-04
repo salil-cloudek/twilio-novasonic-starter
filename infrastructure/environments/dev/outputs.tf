@@ -92,6 +92,11 @@ output "knowledge_base_database_name" {
   value       = var.create_knowledge_base ? module.knowledge_base[0].database_name : null
 }
 
+output "knowledge_base_data_source_id" {
+  description = "ID of the Knowledge Base data source (if created)"
+  value       = var.create_knowledge_base ? module.knowledge_base[0].data_source_id : null
+}
+
 # Agent Outputs (conditional)
 output "agent_id" {
   description = "ID of the Bedrock Agent (if created)"

@@ -51,7 +51,7 @@ export const RealtimeSystemPrompt = "You are a conversational AI assistant engag
 export const DefaultAudioOutputConfiguration = {
   ...DefaultAudioInputConfiguration,
   sampleRateHertz: 16000,  // Match bedrock-harness output configuration
-  voiceId: "tiffany",
+  voiceId: "amy",
 };
 
 // Audio sample rates (Hz)

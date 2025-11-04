@@ -59,7 +59,9 @@ const bedrockClient = new NovaSonicBidirectionalStreamClient({
   bedrock: {
     region: config.bedrock?.region || 'us-east-1',
     modelId: config.bedrock?.modelId || 'amazon.nova-sonic-v1:0'
-  }
+  },
+  enableOrchestrator: true,
+  enableOrchestratorDebug: config.logging?.level === 'DEBUG'
 });
 
 /**

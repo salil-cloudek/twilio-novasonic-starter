@@ -1,6 +1,6 @@
 variable "ecs_cluster_name" {
   description = "Name for the ECS Cluster"
-  type = string
+  type        = string
 }
 
 variable "tags" {

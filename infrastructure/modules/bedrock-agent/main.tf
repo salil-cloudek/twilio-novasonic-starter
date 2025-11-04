@@ -42,7 +42,7 @@ resource "aws_iam_role_policy" "agent_bedrock_policy" {
           "bedrock:InvokeModel"
         ]
         Resource = [
-          for model_id in var.foundation_model_ids : 
+          for model_id in var.foundation_model_ids :
           "arn:aws:bedrock:${var.region}::foundation-model/${model_id}"
         ]
       }
@@ -85,7 +85,7 @@ resource "aws_iam_role_policy" "agent_lambda_policy" {
           "lambda:InvokeFunction"
         ]
         Resource = [
-          for action_group in var.action_groups : 
+          for action_group in var.action_groups :
           action_group.lambda_function_arn
           if action_group.lambda_function_arn != null
         ]
@@ -102,7 +102,7 @@ resource "aws_bedrockagent_agent" "main" {
   instruction                 = var.agent_instruction
   description                 = var.agent_description
   idle_session_ttl_in_seconds = var.idle_session_ttl_in_seconds
-  
+
   dynamic "prompt_override_configuration" {
     for_each = var.prompt_override_configuration != null ? [var.prompt_override_configuration] : []
     content {
@@ -112,11 +112,11 @@ resource "aws_bedrockagent_agent" "main" {
           max_length     = prompt_override_configuration.value.maximum_length
           stop_sequences = prompt_override_configuration.value.stop_sequences
           temperature    = prompt_override_configuration.value.temperature
-          top_k         = prompt_override_configuration.value.top_k
-          top_p         = prompt_override_configuration.value.top_p
+          top_k          = prompt_override_configuration.value.top_k
+          top_p          = prompt_override_configuration.value.top_p
         }
-        parser_mode           = prompt_override_configuration.value.parser_mode
-        prompt_creation_mode  = prompt_override_configuration.value.prompt_creation_mode
+        parser_mode          = prompt_override_configuration.value.parser_mode
+        prompt_creation_mode = prompt_override_configuration.value.prompt_creation_mode
         prompt_state         = prompt_override_configuration.value.prompt_state
         prompt_type          = prompt_override_configuration.value.prompt_type
       }
@@ -134,11 +134,11 @@ resource "aws_bedrockagent_agent" "main" {
 resource "aws_bedrockagent_agent_action_group" "action_groups" {
   for_each = { for idx, ag in var.action_groups : idx => ag }
 
-  action_group_name          = each.value.name
-  agent_id                   = aws_bedrockagent_agent.main.id
-  agent_version             = "DRAFT"
-  description               = each.value.description
-  action_group_state        = each.value.state
+  action_group_name  = each.value.name
+  agent_id           = aws_bedrockagent_agent.main.id
+  agent_version      = "DRAFT"
+  description        = each.value.description
+  action_group_state = each.value.state
 
   dynamic "action_group_executor" {
     for_each = each.value.lambda_function_arn != null ? [1] : []
@@ -193,16 +193,16 @@ resource "aws_bedrockagent_agent_alias" "main" {
 
 # Lambda functions for custom actions (if needed)
 resource "aws_lambda_function" "action_functions" {
-  for_each = { 
-    for idx, ag in var.action_groups : idx => ag 
-    if ag.create_lambda_function && ag.lambda_function_code != null 
+  for_each = {
+    for idx, ag in var.action_groups : idx => ag
+    if ag.create_lambda_function && ag.lambda_function_code != null
   }
 
   function_name = "${var.agent_name}-${each.value.name}-action"
-  role         = aws_iam_role.lambda_execution_role[each.key].arn
-  handler      = each.value.lambda_handler
-  runtime      = each.value.lambda_runtime
-  timeout      = each.value.lambda_timeout
+  role          = aws_iam_role.lambda_execution_role[each.key].arn
+  handler       = each.value.lambda_handler
+  runtime       = each.value.lambda_runtime
+  timeout       = each.value.lambda_timeout
 
   filename         = each.value.lambda_function_code
   source_code_hash = filebase64sha256(each.value.lambda_function_code)
@@ -222,9 +222,9 @@ resource "aws_lambda_function" "action_functions" {
 
 # IAM role for Lambda execution (if Lambda functions are created)
 resource "aws_iam_role" "lambda_execution_role" {
-  for_each = { 
-    for idx, ag in var.action_groups : idx => ag 
-    if ag.create_lambda_function 
+  for_each = {
+    for idx, ag in var.action_groups : idx => ag
+    if ag.create_lambda_function
   }
 
   name = "${var.agent_name}-${each.value.name}-lambda-role"
@@ -247,9 +247,9 @@ resource "aws_iam_role" "lambda_execution_role" {
 
 # Basic Lambda execution policy
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
-  for_each = { 
-    for idx, ag in var.action_groups : idx => ag 
-    if ag.create_lambda_function 
+  for_each = {
+    for idx, ag in var.action_groups : idx => ag
+    if ag.create_lambda_function
   }
 
   role       = aws_iam_role.lambda_execution_role[each.key].name
@@ -258,9 +258,9 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 
 # Lambda resource-based policy to allow Bedrock Agent to invoke
 resource "aws_lambda_permission" "allow_bedrock_agent" {
-  for_each = { 
-    for idx, ag in var.action_groups : idx => ag 
-    if ag.create_lambda_function 
+  for_each = {
+    for idx, ag in var.action_groups : idx => ag
+    if ag.create_lambda_function
   }
 
   statement_id  = "AllowBedrockAgentInvoke"

@@ -38,7 +38,7 @@ variable "slack_webhook_url" {
 variable "memory_threshold_bytes" {
   description = "Memory usage threshold in bytes for custom memory alarm"
   type        = number
-  default     = 3221225472  # 3GB in bytes (80% of 4GB container)
+  default     = 3221225472 # 3GB in bytes (80% of 4GB container)
 }
 
 variable "error_count_threshold" {

@@ -98,7 +98,7 @@ resource "aws_lb_target_group" "ecs_service" {
   name             = "${var.alb_name}-tg"
   port             = var.target_port
   protocol         = "HTTP"
-  protocol_version = "HTTP1"  # Required for WebSocket support
+  protocol_version = "HTTP1" # Required for WebSocket support
   vpc_id           = var.vpc_id
   target_type      = "ip"
 
@@ -118,7 +118,7 @@ resource "aws_lb_target_group" "ecs_service" {
   stickiness {
     enabled         = true
     type            = "lb_cookie"
-    cookie_duration = 86400  # 24 hours
+    cookie_duration = 86400 # 24 hours
   }
 
   tags = var.tags

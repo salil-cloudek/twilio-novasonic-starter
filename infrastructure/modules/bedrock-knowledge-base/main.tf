@@ -41,17 +41,17 @@ resource "aws_s3_bucket_public_access_block" "knowledge_base_documents" {
 
 # Aurora Serverless v2 cluster for vector storage with pgvector
 resource "aws_rds_cluster" "knowledge_base_vector_db" {
-  cluster_identifier     = "${var.knowledge_base_name}-vector-db"
-  engine                = "aurora-postgresql"
-  engine_mode           = "provisioned"
-  engine_version        = "15.4"
-  database_name         = var.database_name
-  master_username       = var.db_username
+  cluster_identifier          = "${var.knowledge_base_name}-vector-db"
+  engine                      = "aurora-postgresql"
+  engine_mode                 = "provisioned"
+  engine_version              = "17.4"
+  database_name               = var.database_name
+  master_username             = var.db_username
   manage_master_user_password = true
-  
+
   # Enable Data API v2 (required for Bedrock Knowledge Base integration)
   enable_http_endpoint = true
-  
+
   serverlessv2_scaling_configuration {
     max_capacity = var.max_capacity
     min_capacity = var.min_capacity
@@ -59,10 +59,10 @@ resource "aws_rds_cluster" "knowledge_base_vector_db" {
 
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   db_subnet_group_name   = aws_db_subnet_group.knowledge_base_subnet_group.name
-  
+
   skip_final_snapshot = var.skip_final_snapshot
   deletion_protection = var.deletion_protection
-  
+
   tags = var.tags
 }
 
@@ -88,13 +88,14 @@ resource "null_resource" "initialize_vector_db" {
       set -e  # Exit on any error
       
       echo "Waiting for Aurora cluster to be available..."
-      aws rds wait db-cluster-available --db-cluster-identifier ${aws_rds_cluster.knowledge_base_vector_db.cluster_identifier}
+      aws rds wait db-cluster-available --db-cluster-identifier ${aws_rds_cluster.knowledge_base_vector_db.cluster_identifier} --region ${var.region}
       
       echo "Creating pgvector extension..."
       aws rds-data execute-statement \
         --resource-arn "${aws_rds_cluster.knowledge_base_vector_db.arn}" \
         --secret-arn "${aws_rds_cluster.knowledge_base_vector_db.master_user_secret[0].secret_arn}" \
         --database "${var.database_name}" \
+        --region ${var.region} \
         --sql "CREATE EXTENSION IF NOT EXISTS vector;"
       
       echo "Creating bedrock_integration table..."
@@ -102,6 +103,7 @@ resource "null_resource" "initialize_vector_db" {
         --resource-arn "${aws_rds_cluster.knowledge_base_vector_db.arn}" \
         --secret-arn "${aws_rds_cluster.knowledge_base_vector_db.master_user_secret[0].secret_arn}" \
         --database "${var.database_name}" \
+        --region ${var.region} \
         --sql "CREATE TABLE IF NOT EXISTS ${var.vector_table_name} (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           chunks TEXT,
@@ -114,6 +116,7 @@ resource "null_resource" "initialize_vector_db" {
         --resource-arn "${aws_rds_cluster.knowledge_base_vector_db.arn}" \
         --secret-arn "${aws_rds_cluster.knowledge_base_vector_db.master_user_secret[0].secret_arn}" \
         --database "${var.database_name}" \
+        --region ${var.region} \
         --sql "CREATE INDEX IF NOT EXISTS ${var.vector_table_name}_chunks_gin_idx ON ${var.vector_table_name} USING gin (to_tsvector('simple', chunks));"
       
       echo "Creating HNSW vector index for embedding column (required by Bedrock Knowledge Base)..."
@@ -121,6 +124,7 @@ resource "null_resource" "initialize_vector_db" {
         --resource-arn "${aws_rds_cluster.knowledge_base_vector_db.arn}" \
         --secret-arn "${aws_rds_cluster.knowledge_base_vector_db.master_user_secret[0].secret_arn}" \
         --database "${var.database_name}" \
+        --region ${var.region} \
         --sql "CREATE INDEX IF NOT EXISTS ${var.vector_table_name}_embedding_idx ON ${var.vector_table_name} USING hnsw (embedding vector_cosine_ops);"
       
       echo "Database initialization completed successfully!"
@@ -131,6 +135,7 @@ resource "null_resource" "initialize_vector_db" {
         --resource-arn "${aws_rds_cluster.knowledge_base_vector_db.arn}" \
         --secret-arn "${aws_rds_cluster.knowledge_base_vector_db.master_user_secret[0].secret_arn}" \
         --database "${var.database_name}" \
+        --region ${var.region} \
         --sql "SELECT COUNT(*) as index_count FROM pg_indexes WHERE tablename = '${var.vector_table_name}' AND (indexname LIKE '%chunks_gin_idx' OR indexname LIKE '%embedding_idx');" \
         --output text
     EOT
@@ -138,8 +143,8 @@ resource "null_resource" "initialize_vector_db" {
 
   # Trigger re-creation if configuration changes
   triggers = {
-    table_name = var.vector_table_name
-    cluster_id = aws_rds_cluster.knowledge_base_vector_db.id
+    table_name    = var.vector_table_name
+    cluster_id    = aws_rds_cluster.knowledge_base_vector_db.id
     database_name = var.database_name
   }
 }
@@ -220,18 +225,20 @@ resource "aws_iam_role_policy" "knowledge_base_s3_policy" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
           "s3:ListBucket"
         ]
         Resource = [
-          aws_s3_bucket.knowledge_base_documents.arn,
+          aws_s3_bucket.knowledge_base_documents.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = [
           "${aws_s3_bucket.knowledge_base_documents.arn}/*"
         ]
-        Condition = {
-          StringEquals = {
-            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
-          }
-        }
       }
     ]
   })
@@ -303,7 +310,7 @@ resource "aws_iam_role_policy" "knowledge_base_bedrock_policy" {
 
 # Wait for database initialization to complete before creating knowledge base
 resource "time_sleep" "wait_for_db_init" {
-  depends_on = [null_resource.initialize_vector_db]
+  depends_on      = [null_resource.initialize_vector_db]
   create_duration = "30s"
 }
 
@@ -323,9 +330,9 @@ resource "aws_bedrockagent_knowledge_base" "main" {
     type = "RDS"
     rds_configuration {
       credentials_secret_arn = aws_rds_cluster.knowledge_base_vector_db.master_user_secret[0].secret_arn
-      database_name         = aws_rds_cluster.knowledge_base_vector_db.database_name
-      resource_arn          = aws_rds_cluster.knowledge_base_vector_db.arn
-      table_name           = var.vector_table_name
+      database_name          = aws_rds_cluster.knowledge_base_vector_db.database_name
+      resource_arn           = aws_rds_cluster.knowledge_base_vector_db.arn
+      table_name             = var.vector_table_name
       field_mapping {
         metadata_field    = "metadata"
         primary_key_field = "id"
@@ -354,7 +361,7 @@ resource "aws_bedrockagent_data_source" "main" {
   data_source_configuration {
     type = "S3"
     s3_configuration {
-      bucket_arn = aws_s3_bucket.knowledge_base_documents.arn
+      bucket_arn         = aws_s3_bucket.knowledge_base_documents.arn
       inclusion_prefixes = var.s3_inclusion_prefixes
     }
   }

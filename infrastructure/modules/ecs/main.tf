@@ -55,7 +55,7 @@ resource "aws_iam_role_policy" "ecs_task_bedrock_policy" {
         Effect = "Allow"
         Action = [
           "bedrock:InvokeModel",
-          "bedrock:InvokeModelWithResponseStream", 
+          "bedrock:InvokeModelWithResponseStream",
           "bedrock:InvokeModelWithBidirectionalStream",
           "bedrock:ListFoundationModels",
           "bedrock:GetFoundationModel",
@@ -80,7 +80,7 @@ resource "aws_iam_role_policy" "ecs_task_bedrock_policy" {
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup",
-          "logs:CreateLogStream", 
+          "logs:CreateLogStream",
           "logs:PutLogEvents",
           "logs:DescribeLogStreams"
         ]
@@ -125,54 +125,54 @@ resource "aws_iam_role_policy" "ecs_task_bedrock_policy" {
           "arn:aws:logs:*:*:log-group:/aws/ecs/twilio-bedrock-bridge*"
         ]
       }
-    ],
-    # Conditionally add Knowledge Base permissions if ARNs are provided and not just "*"
-    length(var.knowledge_base_arns) > 0 && !contains(var.knowledge_base_arns, "*") ? [
-      {
-        Effect = "Allow"
-        Action = [
-          "bedrock:Retrieve",
-          "bedrock:RetrieveAndGenerate"
-        ]
-        Resource = var.knowledge_base_arns
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.region
+      ],
+      # Conditionally add Knowledge Base permissions if ARNs are provided and not just "*"
+      length(var.knowledge_base_arns) > 0 && !contains(var.knowledge_base_arns, "*") ? [
+        {
+          Effect = "Allow"
+          Action = [
+            "bedrock:Retrieve",
+            "bedrock:RetrieveAndGenerate"
+          ]
+          Resource = var.knowledge_base_arns
+          Condition = {
+            StringEquals = {
+              "aws:RequestedRegion" = var.region
+            }
           }
         }
-      }
-    ] : [],
-    # Conditionally add Agent permissions if ARNs are provided and not just "*"
-    length(var.agent_arns) > 0 && !contains(var.agent_arns, "*") ? [
-      {
-        Effect = "Allow"
-        Action = [
-          "bedrock:InvokeAgent"
-        ]
-        Resource = var.agent_arns
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.region
+      ] : [],
+      # Conditionally add Agent permissions if ARNs are provided and not just "*"
+      length(var.agent_arns) > 0 && !contains(var.agent_arns, "*") ? [
+        {
+          Effect = "Allow"
+          Action = [
+            "bedrock:InvokeAgent"
+          ]
+          Resource = var.agent_arns
+          Condition = {
+            StringEquals = {
+              "aws:RequestedRegion" = var.region
+            }
           }
         }
-      }
-    ] : [],
-    # Add wildcard permissions for Knowledge Base and Agent if "*" is specified
-    contains(var.knowledge_base_arns, "*") || contains(var.agent_arns, "*") ? [
-      {
-        Effect = "Allow"
-        Action = [
-          "bedrock:Retrieve",
-          "bedrock:RetrieveAndGenerate",
-          "bedrock:InvokeAgent"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.region
+      ] : [],
+      # Add wildcard permissions for Knowledge Base and Agent if "*" is specified
+      contains(var.knowledge_base_arns, "*") || contains(var.agent_arns, "*") ? [
+        {
+          Effect = "Allow"
+          Action = [
+            "bedrock:Retrieve",
+            "bedrock:RetrieveAndGenerate",
+            "bedrock:InvokeAgent"
+          ]
+          Resource = "*"
+          Condition = {
+            StringEquals = {
+              "aws:RequestedRegion" = var.region
+            }
           }
         }
-      }
     ] : [])
   })
 }
@@ -257,7 +257,7 @@ resource "aws_ecs_task_definition" "adot_collector" {
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn           = aws_iam_role.ecs_task_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
@@ -371,14 +371,14 @@ resource "aws_ecs_task_definition" "twilio_media_stream" {
   cpu                      = "2048"
   memory                   = "4096"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn           = aws_iam_role.ecs_task_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
       name      = "twilio-media-stream-server"
       image     = "${var.ecr_repository_url}:latest"
       essential = true
-      
+
       portMappings = [
         {
           containerPort = 8080
@@ -503,22 +503,22 @@ resource "aws_ecs_task_definition" "twilio_media_stream" {
           name  = "OTEL_SDK_DISABLED"
           value = "true"
         }
-      ], var.twilio_auth_token != null ? [
+        ], var.twilio_auth_token != null ? [
         {
           name  = "TWILIO_AUTH_TOKEN"
           value = var.twilio_auth_token
         }
-      ] : [], var.knowledge_base_id != null ? [
+        ] : [], var.knowledge_base_id != null ? [
         {
           name  = "BEDROCK_KNOWLEDGE_BASE_ID"
           value = var.knowledge_base_id
         }
-      ] : [], var.agent_id != null ? [
+        ] : [], var.agent_id != null ? [
         {
           name  = "BEDROCK_AGENT_ID"
           value = var.agent_id
         }
-      ] : [], var.agent_alias_id != null ? [
+        ] : [], var.agent_alias_id != null ? [
         {
           name  = "BEDROCK_AGENT_ALIAS_ID"
           value = var.agent_alias_id
@@ -550,8 +550,8 @@ resource "aws_ecs_service" "twilio_media_stream" {
 
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
-    weight           = 100
-    base             = 0
+    weight            = 100
+    base              = 0
   }
 
   network_configuration {
