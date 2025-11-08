@@ -16,6 +16,12 @@ import { NovaSonicBidirectionalStreamClient } from '../client';
 
 // Internal modules - config
 import { config } from '../config/AppConfig';
+import { configManager } from '../config/ConfigurationManager';
+
+// Internal modules - tools (RAG via tool use)
+import { getEnabledKnowledgeBaseTools, validateToolConfiguration } from '../tools/KnowledgeBaseTools';
+import { ToolExecutor } from '../tools/ToolExecutor';
+import { ToolUseRequest } from '../tools/types';
 
 // Internal modules - errors
 import { extractErrorDetails } from '../errors/ClientErrors';
@@ -47,7 +53,8 @@ import { sanitizeInput } from '../utils/ValidationUtils';
 export const callSidToSessionId: Map<string, string> = new Map();
 export const wsIdToSessionId: Map<string, string> = new Map();
 
-
+// Initialize tool executor for RAG via tool use
+const toolExecutor = new ToolExecutor();
 
 // Enhanced Bedrock client with orchestrator capabilities
 // Uses default AWS credential chain (IAM roles in ECS, profiles locally)
@@ -59,9 +66,7 @@ const bedrockClient = new NovaSonicBidirectionalStreamClient({
   bedrock: {
     region: config.bedrock?.region || 'us-east-1',
     modelId: config.bedrock?.modelId || 'amazon.nova-sonic-v1:0'
-  },
-  enableOrchestrator: true,
-  enableOrchestratorDebug: config.logging?.level === 'DEBUG'
+  }
 });
 
 /**
@@ -312,8 +317,43 @@ export function initWebsocketServer(server: http.Server): void {
               logger.info('Creating and initiating Bedrock session for Twilio call', { sessionId });
               try {
                 logger.debug('Calling createStreamSession', { sessionId });
-                bedrockClient.createStreamSession(sessionId);
-                logger.info('createStreamSession completed', { sessionId });
+                
+                // Prepare tool configuration for RAG via tool use
+                let toolConfig: { tools: any[]; autoExecuteTools: boolean } | undefined;
+                
+                if (configManager.rag?.useToolBasedRAG) {
+                  const tools = getEnabledKnowledgeBaseTools();
+                  
+                  if (tools.length > 0) {
+                    toolConfig = {
+                      tools,
+                      autoExecuteTools: configManager.rag.autoExecuteTools
+                    };
+                    
+                    logger.info('RAG via tool use enabled for session', {
+                      sessionId,
+                      toolCount: tools.length,
+                      toolNames: tools.map(t => t.name),
+                      autoExecute: toolConfig.autoExecuteTools
+                    });
+                  } else {
+                    logger.warn('RAG via tool use enabled but no tools available', { sessionId });
+                  }
+                }
+                
+                // Create session with tool configuration if available
+                bedrockClient.createStreamSession(sessionId, {
+                  clientConfig: { 
+                    region: config.bedrock?.region || 'us-east-1'
+                  },
+                  bedrock: {
+                    region: config.bedrock?.region || 'us-east-1',
+                    modelId: config.bedrock?.modelId || 'amazon.nova-sonic-v1:0'
+                  },
+                  toolConfig
+                });
+                
+                logger.info('createStreamSession completed', { sessionId, hasTools: !!toolConfig });
                 // Start the bidirectional stream in background; don't await since it runs until session end.
                 logger.debug('Starting initiateSession (background) for Bedrock', { sessionId, ts: Date.now() });
                 bedrockClient.initiateSession(sessionId).catch((e: unknown) => {
@@ -437,6 +477,60 @@ export function initWebsocketServer(server: http.Server): void {
 
               } catch (err) {
                 logger.warn('Failed to forward audioOutput to Twilio', { client: sessionId, err, inspected: (err as any)?.stack ?? null });
+              }
+            });
+
+            // Register handler for tool use events (RAG via tool use)
+            // When Nova Sonic needs information, it will request to use a tool
+            // We execute the tool (search knowledge base) and send results back
+            bedrockClient.registerEventHandler(sessionId, 'toolUse', async (data: unknown) => {
+              const toolUse = data as ToolUseRequest;
+              const correlationId = CorrelationIdManager.getCurrentCorrelationId();
+              
+              logger.info('Nova Sonic requesting tool use', {
+                correlationId,
+                sessionId,
+                toolName: toolUse.name,
+                toolUseId: toolUse.toolUseId,
+                input: toolUse.input
+              });
+              
+              try {
+                // Execute the tool (search knowledge base)
+                const result = await toolExecutor.executeTool(toolUse, sessionId);
+                
+                logger.info('Tool execution completed', {
+                  correlationId,
+                  sessionId,
+                  toolName: toolUse.name,
+                  toolUseId: toolUse.toolUseId,
+                  status: result.status
+                });
+                
+                // Send result back to Nova Sonic
+                // Nova Sonic will seamlessly incorporate this into its response
+                bedrockClient.sendToolResult(sessionId, toolUse.toolUseId, result);
+                
+              } catch (error) {
+                logger.error('Tool execution failed', {
+                  correlationId,
+                  sessionId,
+                  toolName: toolUse.name,
+                  toolUseId: toolUse.toolUseId,
+                  error: error instanceof Error ? error.message : String(error)
+                });
+                
+                // Send error result back to Nova Sonic
+                // Nova Sonic will handle gracefully (e.g., "I don't have that information")
+                bedrockClient.sendToolResult(sessionId, toolUse.toolUseId, {
+                  toolUseId: toolUse.toolUseId,
+                  content: [
+                    {
+                      text: 'Unable to retrieve information at this time.'
+                    }
+                  ],
+                  status: 'error'
+                });
               }
             });
 

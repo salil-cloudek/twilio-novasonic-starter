@@ -306,3 +306,4 @@ export function validateStringPattern(
   
   return { isValid: true, errors: [] };
 }
+

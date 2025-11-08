@@ -73,6 +73,20 @@ export interface NovaSonicBidirectionalStreamClientConfig {
   };
   enableOrchestrator?: boolean;
   enableOrchestratorDebug?: boolean;
+  /**
+   * Tool configuration for RAG via tool use
+   * When provided, Nova Sonic can use these tools to retrieve information
+   */
+  toolConfig?: {
+    /** List of available tools */
+    tools: Array<{
+      name: string;
+      description: string;
+      inputSchema: any;
+    }>;
+    /** Whether to automatically execute tool requests (default: true) */
+    autoExecuteTools?: boolean;
+  };
 }
 
 interface SessionData {
@@ -97,6 +111,15 @@ interface SessionData {
   modelSpeaking?: boolean;
   lastUserActivity?: number;
   lastModelActivity?: number;
+  // Tool configuration for this session
+  toolConfig?: {
+    tools: Array<{
+      name: string;
+      description: string;
+      inputSchema: any;
+    }>;
+    autoExecuteTools?: boolean;
+  };
 }
 
 
@@ -218,7 +241,7 @@ export class NovaSonicBidirectionalStreamClient {
       }
     }
 
-    const session = this.createSessionData(sessionId, config?.inferenceConfig);
+    const session = this.createSessionData(sessionId, config?.inferenceConfig, config?.toolConfig);
     this.activeSessions.set(sessionId, session);
 
     const streamSession = new StreamSession(sessionId, this);
@@ -461,13 +484,28 @@ export class NovaSonicBidirectionalStreamClient {
     const session = this.activeSessions.get(sessionId);
     if (!session) return;
 
+    // Convert tool definitions to Nova Sonic format if tools are configured
+    const toolConfiguration = session.toolConfig && session.toolConfig.tools.length > 0
+      ? {
+          tools: session.toolConfig.tools.map(tool => ({
+            toolSpec: {
+              name: tool.name,
+              description: tool.description,
+              inputSchema: {
+                json: tool.inputSchema
+              }
+            }
+          }))
+        }
+      : { tools: [] };
+
     this.addEventToSessionQueue(sessionId, {
       event: {
         promptStart: {
           promptName: session.promptName,
           textOutputConfiguration: { mediaType: "text/plain" },
           audioOutputConfiguration: DefaultAudioOutputConfiguration,
-          toolConfiguration: { tools: [] },
+          toolConfiguration,
         },
       }
     });
@@ -601,6 +639,46 @@ export class NovaSonicBidirectionalStreamClient {
     logger.info(`Set isWaitingForResponse=true for session ${sessionId}`);
   }
 
+  /**
+   * Send a tool result back to Nova Sonic
+   * This is called after executing a tool request from Nova Sonic
+   * 
+   * @param sessionId - Session ID
+   * @param toolUseId - Tool use ID from the tool request (must match)
+   * @param result - The result data to send back
+   */
+  public sendToolResult(sessionId: string, toolUseId: string, result: any): void {
+    const correlationId = CorrelationIdManager.getCurrentCorrelationId();
+    const session = this.activeSessions.get(sessionId);
+    
+    if (!session) {
+      logger.warn('Cannot send tool result: session not found', {
+        correlationId,
+        sessionId,
+        toolUseId
+      });
+      return;
+    }
+
+    logger.info('Sending tool result to Nova Sonic', {
+      correlationId,
+      sessionId,
+      toolUseId,
+      status: result.status
+    });
+
+    // Send tool result in Nova Sonic's expected format
+    this.addEventToSessionQueue(sessionId, {
+      event: {
+        toolResult: {
+          toolUseId,
+          content: result.content || [{ text: JSON.stringify(result) }],
+          status: result.status || 'success'
+        }
+      }
+    });
+  }
+
   public sendSessionEnd(sessionId: string): void {
     const session = this.activeSessions.get(sessionId);
     if (!session) return;
@@ -656,7 +734,18 @@ export class NovaSonicBidirectionalStreamClient {
   /**
    * Create session data structure
    */
-  private createSessionData(sessionId: string, inferenceConfig?: InferenceConfig): SessionData {
+  private createSessionData(
+    sessionId: string, 
+    inferenceConfig?: InferenceConfig,
+    toolConfig?: {
+      tools: Array<{
+        name: string;
+        description: string;
+        inputSchema: any;
+      }>;
+      autoExecuteTools?: boolean;
+    }
+  ): SessionData {
     return {
       queue: [],
       queueSignal: new Subject<void>(),
@@ -669,7 +758,8 @@ export class NovaSonicBidirectionalStreamClient {
       isPromptStartSent: false,
       isAudioContentStartSent: false,
       audioContentId: randomUUID(),
-      isWaitingForResponse: false
+      isWaitingForResponse: false,
+      toolConfig
     };
   }
 
