@@ -523,7 +523,33 @@ resource "aws_ecs_task_definition" "twilio_media_stream" {
           name  = "BEDROCK_AGENT_ALIAS_ID"
           value = var.agent_alias_id
         }
-      ] : [])
+      ] : [], [
+        # RAG (Retrieval-Augmented Generation) Configuration
+        {
+          name  = "AWS_RAG_USE_TOOL_BASED"
+          value = tostring(var.rag_use_tool_based)
+        },
+        {
+          name  = "AWS_RAG_AUTO_EXECUTE_TOOLS"
+          value = tostring(var.rag_auto_execute_tools)
+        },
+        {
+          name  = "AWS_RAG_TOOL_TIMEOUT_MS"
+          value = tostring(var.rag_tool_timeout_ms)
+        },
+        {
+          name  = "AWS_RAG_ENABLE_FALLBACK"
+          value = tostring(var.rag_enable_fallback)
+        },
+        {
+          name  = "AWS_RAG_MAX_RESULTS"
+          value = tostring(var.rag_max_results)
+        },
+        {
+          name  = "AWS_RAG_MIN_RELEVANCE_SCORE"
+          value = tostring(var.rag_min_relevance_score)
+        }
+      ])
 
       logConfiguration = {
         logDriver = "awslogs"

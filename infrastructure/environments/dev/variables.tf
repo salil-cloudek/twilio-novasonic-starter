@@ -345,3 +345,40 @@ variable "external_agent_arns" {
   type        = list(string)
   default     = []
 }
+
+# RAG (Retrieval-Augmented Generation) Configuration Variables
+variable "rag_use_tool_based" {
+  description = "Enable tool-based RAG (Nova Sonic uses tools to query knowledge bases)"
+  type        = bool
+  default     = false
+}
+
+variable "rag_auto_execute_tools" {
+  description = "Auto-execute knowledge base tool requests from Nova Sonic"
+  type        = bool
+  default     = true
+}
+
+variable "rag_tool_timeout_ms" {
+  description = "Tool execution timeout in milliseconds"
+  type        = number
+  default     = 10000
+}
+
+variable "rag_enable_fallback" {
+  description = "Enable fallback to orchestrator if tool execution fails"
+  type        = bool
+  default     = true
+}
+
+variable "rag_max_results" {
+  description = "Maximum number of results from knowledge base"
+  type        = number
+  default     = 3
+}
+
+variable "rag_min_relevance_score" {
+  description = "Minimum relevance score (0.0 - 1.0) for knowledge base results"
+  type        = number
+  default     = 0.5
+}

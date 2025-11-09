@@ -492,7 +492,7 @@ export class NovaSonicBidirectionalStreamClient {
               name: tool.name,
               description: tool.description,
               inputSchema: {
-                json: tool.inputSchema
+                json: JSON.stringify(tool.inputSchema)
               }
             }
           }))
@@ -667,13 +667,60 @@ export class NovaSonicBidirectionalStreamClient {
       status: result.status
     });
 
-    // Send tool result in Nova Sonic's expected format
+    // Format the result as a JSON string (matching AWS sample pattern)
+    // Both AWS samples send tool results as JSON strings using json.dumps()
+    let contentString = '';
+    if (result.content && Array.isArray(result.content) && result.content.length > 0) {
+      // If content is an array of objects with text, extract and send as JSON
+      const contentData = result.content.map((item: any) => item.text).join('\n');
+      contentString = JSON.stringify({ result: contentData });
+    } else if (typeof result.content === 'string') {
+      contentString = JSON.stringify({ result: result.content });
+    } else {
+      // Send the entire result as JSON
+      contentString = JSON.stringify(result);
+    }
+
+    // Generate a unique contentName for this tool result
+    const contentName = randomUUID();
+
+    // 1. Send contentStart to open the content
+    this.addEventToSessionQueue(sessionId, {
+      event: {
+        contentStart: {
+          promptName: session.promptName,
+          contentName: contentName,
+          type: 'TOOL',
+          role: 'TOOL',
+          interactive: false,
+          toolResultInputConfiguration: {
+            toolUseId,
+            type: 'TEXT',
+            textInputConfiguration: {
+              mediaType: 'text/plain'
+            }
+          }
+        }
+      }
+    });
+
+    // 2. Send the actual tool result as JSON string (matching AWS sample pattern)
     this.addEventToSessionQueue(sessionId, {
       event: {
         toolResult: {
-          toolUseId,
-          content: result.content || [{ text: JSON.stringify(result) }],
-          status: result.status || 'success'
+          promptName: session.promptName,
+          contentName: contentName,
+          content: contentString
+        }
+      }
+    });
+
+    // 3. Send contentEnd to close the content
+    this.addEventToSessionQueue(sessionId, {
+      event: {
+        contentEnd: {
+          promptName: session.promptName,
+          contentName: contentName
         }
       }
     });
@@ -811,6 +858,23 @@ export class NovaSonicBidirectionalStreamClient {
         try {
           typedObj.parsedAdditionalModelFields = JSON.parse(typedObj.additionalModelFields);
         } catch { /* ignore */ }
+      }
+
+      // Transform toolUse from Nova Sonic format to ToolUseRequest format
+      // Nova sends: { toolName, content (JSON string), toolUseId }
+      // We need: { name, input (parsed object), toolUseId }
+      if (typedObj.toolName && typedObj.content && !typedObj.name && !typedObj.input) {
+        typedObj.name = typedObj.toolName;
+        try {
+          typedObj.input = JSON.parse(typedObj.content);
+        } catch (parseError) {
+          logger.warn('Failed to parse toolUse content', {
+            toolName: typedObj.toolName,
+            content: typedObj.content,
+            error: parseError instanceof Error ? parseError.message : String(parseError)
+          });
+          typedObj.input = {};
+        }
       }
     } catch (e) {
       // Non-fatal normalization error

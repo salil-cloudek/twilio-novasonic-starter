@@ -217,6 +217,14 @@ module "ecs" {
   agent_id       = var.create_agent ? module.agent[0].agent_id : null
   agent_alias_id = var.create_agent ? module.agent[0].agent_alias_id : null
 
+  # RAG Configuration
+  rag_use_tool_based      = var.rag_use_tool_based
+  rag_auto_execute_tools  = var.rag_auto_execute_tools
+  rag_tool_timeout_ms     = var.rag_tool_timeout_ms
+  rag_enable_fallback     = var.rag_enable_fallback
+  rag_max_results         = var.rag_max_results
+  rag_min_relevance_score = var.rag_min_relevance_score
+
   tags = local.common_tags
 
   depends_on = [
