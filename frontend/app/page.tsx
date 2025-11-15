@@ -233,7 +233,6 @@ export default function Home() {
                     isCapturing={recording}
                     onError={handleAudioError}
                     inline
-                    setIsThinking={setIsThinking}
                   />
                 </div>
               )}
