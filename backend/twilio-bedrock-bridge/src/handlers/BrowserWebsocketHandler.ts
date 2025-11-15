@@ -339,7 +339,7 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
                           }, sessionId);
                           
                           if (bedrockClient.isSessionActive(sessionId)) {
-                            bedrockClient.sendToolResult(sessionId, result.toolUseId, result.content);
+                            bedrockClient.sendToolResult(sessionId, result.toolUseId, result);
                             logger.info('Tool result sent to Bedrock', { 
                               sessionId, 
                               toolName: toolName
