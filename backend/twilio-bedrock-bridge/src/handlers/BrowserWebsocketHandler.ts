@@ -172,6 +172,16 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
       ws.on('message', async (data: Buffer | string) => {
         CorrelationIdManager.runWithContext(ws.correlationContext || { correlationId: 'unknown', source: 'websocket', timestamp: Date.now() }, async () => {
           
+          // Log every message received
+          logger.info('📨 Browser WebSocket message received', {
+            id: tempWsId,
+            type: typeof data === 'string' ? 'text' : 'binary',
+            size: typeof data === 'string' ? data.length : data.length,
+            isRecording,
+            hasSession: !!sessionId,
+            sessionActive: sessionId ? bedrockClient.isSessionActive(sessionId) : false
+          });
+          
           // Handle text messages (commands)
           if (typeof data === 'string') {
             try {
