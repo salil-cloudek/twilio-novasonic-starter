@@ -84,7 +84,7 @@ export class AudioPlaybackService {
     for (const source of this.scheduledBuffers) {
       try {
         source.stop();
-      } catch (e) {
+      } catch {
         // Ignore errors from already stopped sources
       }
     }

@@ -21,7 +21,6 @@ export default function Home() {
   const [recording, setRecording] = useState(false);
   const [textOutputs, setTextOutputs] = useState<TextMessage[]>([]);
   const [wsKey, setWsKey] = useState(0);
-  const [isThinking, setIsThinking] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const displayedMessages = useRef<Set<string>>(new Set());
@@ -78,7 +77,7 @@ export default function Home() {
     }
   }, []);
 
-  const handleEventMessage = (event: any) => {
+  const handleEventMessage = (event: Record<string, unknown>) => {
     console.log('[WS EVENT]', event);
     
     if (event.contentStart && event.contentStart.type === 'TEXT') {
