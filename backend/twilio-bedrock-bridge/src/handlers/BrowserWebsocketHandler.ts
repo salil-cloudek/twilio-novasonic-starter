@@ -172,20 +172,26 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
       ws.on('message', async (data: Buffer | string) => {
         CorrelationIdManager.runWithContext(ws.correlationContext || { correlationId: 'unknown', source: 'websocket', timestamp: Date.now() }, async () => {
           
+          // Convert Buffer to string for potential text commands (small messages)
+          // Audio chunks are typically 6144 bytes, text commands are < 100 bytes
+          const isLikelyTextCommand = Buffer.isBuffer(data) && data.length < 100;
+          const messageStr = isLikelyTextCommand ? data.toString('utf-8') : null;
+          
           // Log every message received
           logger.info('📨 Browser WebSocket message received', {
             id: tempWsId,
-            type: typeof data === 'string' ? 'text' : 'binary',
+            type: isLikelyTextCommand ? 'text-as-binary' : (typeof data === 'string' ? 'text' : 'binary'),
             size: typeof data === 'string' ? data.length : data.length,
+            message: messageStr || (typeof data === 'string' ? data : undefined),
             isRecording,
             hasSession: !!sessionId,
             sessionActive: sessionId ? bedrockClient.isSessionActive(sessionId) : false
           });
           
-          // Handle text messages (commands)
-          if (typeof data === 'string') {
+          // Handle text messages (commands) - check both string and small buffers
+          if (typeof data === 'string' || isLikelyTextCommand) {
+            const command = (typeof data === 'string' ? data : messageStr || '').trim();
             try {
-              const command = data.trim();
               
               if (command === 'start_audio') {
                 logger.info('Browser client started recording', { sessionId: tempWsId });
