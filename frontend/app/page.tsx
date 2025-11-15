@@ -77,7 +77,8 @@ export default function Home() {
     }
   }, []);
 
-  const handleEventMessage = (event: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleEventMessage = (event: any) => {
     console.log('[WS EVENT]', event);
     
     if (event.contentStart && event.contentStart.type === 'TEXT') {
