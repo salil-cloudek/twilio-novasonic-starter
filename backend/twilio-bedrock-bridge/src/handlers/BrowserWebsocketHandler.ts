@@ -206,16 +206,9 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
                   validateToolConfiguration();
                   
                   // Build tool config if tools are available
+                  // Pass tools as ToolDefinition[] - the client will convert to Nova Sonic format
                   const toolConfig = knowledgeBaseTools.length > 0 ? {
-                    tools: knowledgeBaseTools.map(t => ({
-                      toolSpec: {
-                        name: t.name,
-                        description: t.description,
-                        inputSchema: {
-                          json: typeof t.inputSchema === 'string' ? t.inputSchema : JSON.stringify(t.inputSchema)
-                        }
-                      }
-                    }))
+                    tools: knowledgeBaseTools
                   } : undefined;
                   
                   try {
