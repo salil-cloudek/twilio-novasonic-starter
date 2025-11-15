@@ -310,22 +310,30 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
                     
                     // Register tool use handler
                     bedrockClient.registerEventHandler(sessionId, 'toolUse', async (data: unknown) => {
-                      const toolUse = data as { toolName?: string; toolInput?: string; toolUseId?: string; contentId?: string };
-                      if (toolUse?.toolName) {
+                      // toolUse event has: name, input (parsed object), toolUseId after normalization
+                      const toolUse = data as { name?: string; toolName?: string; input?: any; toolUseId?: string; contentId?: string };
+                      const toolName = toolUse.name || toolUse.toolName;
+                      
+                      if (toolName) {
                         logger.info('Tool use requested', { 
                           sessionId, 
-                          toolName: toolUse.toolName,
+                          toolName: toolName,
                           toolUseId: toolUse.toolUseId
                         });
                         
                         try {
-                          // Parse tool input if it's a string
-                          const toolInput = typeof toolUse.toolInput === 'string' 
-                            ? JSON.parse(toolUse.toolInput) 
-                            : toolUse.toolInput || {};
+                          // input is already parsed by normalizeForHandlers
+                          const toolInput = toolUse.input || {};
+                          
+                          logger.info('Executing tool', {
+                            sessionId,
+                            toolName: toolName,
+                            toolUseId: toolUse.toolUseId,
+                            input: toolInput
+                          });
                           
                           const result = await toolExecutor.executeTool({
-                            name: toolUse.toolName,
+                            name: toolName,
                             input: toolInput,
                             toolUseId: toolUse.toolUseId || ''
                           }, sessionId);
@@ -334,7 +342,7 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
                             bedrockClient.sendToolResult(sessionId, result.toolUseId, result.content);
                             logger.info('Tool result sent to Bedrock', { 
                               sessionId, 
-                              toolName: toolUse.toolName 
+                              toolName: toolName
                             });
                           }
                         } catch (toolErr) {
