@@ -7,7 +7,7 @@ interface AudioCaptureProps {
   isCapturing: boolean;
   onError: (error: Error) => void;
   inline?: boolean;
-  setIsThinking: (thinking: boolean) => void;
+  setIsThinking?: (thinking: boolean) => void;
 }
 
 class RollingBuffer {
@@ -74,7 +74,7 @@ export class AudioCaptureService {
   private visualizerCtx: CanvasRenderingContext2D | null = null;
   private isCapturing: boolean = false;
   private websocket: WebSocket | null = null;
-  private setIsThinking: (thinking: boolean) => void;
+  private setIsThinking?: (thinking: boolean) => void;
   private silenceTimer: NodeJS.Timeout | null = null;
   private rollingBuffer: RollingBuffer;
   private readonly SILENCE_THRESHOLD = 0.01;
@@ -83,7 +83,7 @@ export class AudioCaptureService {
   private consecutiveSilenceChunks: number = 0;
   private readonly MAX_SILENCE_CHUNKS = 3;
 
-  constructor(websocket: WebSocket | null, setIsThinking: (thinking: boolean) => void) {
+  constructor(websocket: WebSocket | null, setIsThinking?: (thinking: boolean) => void) {
     this.websocket = websocket;
     this.setIsThinking = setIsThinking;
     this.rollingBuffer = new RollingBuffer();
@@ -266,7 +266,7 @@ export default function AudioCapture({ websocket, isCapturing, onError, inline, 
     if (!canvasRef.current) return;
     
     if (!captureServiceRef.current) {
-      captureServiceRef.current = new AudioCaptureService(websocket, setIsThinking);
+      captureServiceRef.current = new AudioCaptureService(websocket, setIsThinking || undefined);
     }
 
     if (isCapturing) {
