@@ -10,6 +10,7 @@ export class AudioPlaybackService {
   constructor() {
     // Match backend Bedrock audio output sample rate (16kHz)
     this.audioContext = new AudioContext({ sampleRate: 16000 });
+    console.log(`AudioContext created with sample rate: ${this.audioContext.sampleRate}Hz`);
     this.gainNode = this.audioContext.createGain();
     this.gainNode.connect(this.audioContext.destination);
   }
@@ -50,8 +51,8 @@ export class AudioPlaybackService {
       // Decode the base64 PCM data
       const audioData = await this.decodeBase64PCM(base64String);
       
-      // Create audio buffer
-      const audioBuffer = this.audioContext.createBuffer(1, audioData.length, 24000);
+      // Create audio buffer using the AudioContext's sample rate (16kHz)
+      const audioBuffer = this.audioContext.createBuffer(1, audioData.length, this.audioContext.sampleRate);
       audioBuffer.getChannelData(0).set(audioData);
 
       // Create and configure source node
