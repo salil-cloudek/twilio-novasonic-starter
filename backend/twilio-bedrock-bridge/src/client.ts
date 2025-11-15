@@ -1642,9 +1642,8 @@ export class NovaSonicBidirectionalStreamClient {
                 // Note: toolResult is not documented in Nova output events, but keeping for compatibility
                 evt.toolResult = this.normalizeForHandlers(evt.toolResult);
                 this.dispatchEvent(sessionId, 'toolResult', evt.toolResult);
-              } else if (evt.contentEnd && evt.contentEnd.type === 'TOOL') {
-                logger.info(`Tool content ended for session ${sessionId}; server-side tool execution disabled. Ignoring tool result.`);
               } else if (evt.contentEnd) {
+                // Handle contentEnd for all types including TOOL
                 evt.contentEnd = this.normalizeForHandlers(evt.contentEnd);
                 this.dispatchEvent(sessionId, 'contentEnd', evt.contentEnd);
               } else {
