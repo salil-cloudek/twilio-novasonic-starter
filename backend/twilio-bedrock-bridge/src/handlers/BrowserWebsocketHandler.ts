@@ -338,6 +338,13 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
                             toolUseId: toolUse.toolUseId || ''
                           }, sessionId);
                           
+                          logger.info('Tool execution completed', {
+                            sessionId,
+                            toolName: toolName,
+                            toolUseId: toolUse.toolUseId,
+                            status: result.status
+                          });
+                          
                           if (bedrockClient.isSessionActive(sessionId)) {
                             bedrockClient.sendToolResult(sessionId, result.toolUseId, result);
                             logger.info('Tool result sent to Bedrock', { 
@@ -347,9 +354,25 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
                           }
                         } catch (toolErr) {
                           logger.error('Tool execution failed', { 
-                            sessionId, 
-                            error: extractErrorDetails(toolErr) 
+                            sessionId,
+                            toolName: toolName,
+                            toolUseId: toolUse.toolUseId,
+                            error: extractErrorDetails(toolErr)
                           });
+                          
+                          // Send error result back to Nova Sonic
+                          // Nova Sonic will handle gracefully (e.g., "I don't have that information")
+                          if (bedrockClient.isSessionActive(sessionId)) {
+                            bedrockClient.sendToolResult(sessionId, toolUse.toolUseId || '', {
+                              toolUseId: toolUse.toolUseId || '',
+                              content: [
+                                {
+                                  text: 'Unable to retrieve information at this time.'
+                                }
+                              ],
+                              status: 'error'
+                            });
+                          }
                         }
                       }
                     });
