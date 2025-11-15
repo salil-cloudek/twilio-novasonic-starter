@@ -75,7 +75,8 @@ export function initBrowserWebsocketServer(server?: http.Server): WebSocketServe
         const allowedOrigins = [
           'http://localhost:3000',
           'http://localhost:3001',
-          'https://voice-ai.cloudek.au'
+          'https://voice-ai.cloudek.au',
+          'https://frontend-setup.d3disynd4oei0a.amplifyapp.com'
         ];
         
         if (!allowedOrigins.some(allowed => origin.startsWith(allowed))) {
