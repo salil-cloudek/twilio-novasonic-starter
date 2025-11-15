@@ -8,7 +8,8 @@ export class AudioPlaybackService {
   private scheduledBuffers: Set<AudioBufferSourceNode> = new Set();
 
   constructor() {
-    this.audioContext = new AudioContext({ sampleRate: 24000 });
+    // Match backend Bedrock audio output sample rate (16kHz)
+    this.audioContext = new AudioContext({ sampleRate: 16000 });
     this.gainNode = this.audioContext.createGain();
     this.gainNode.connect(this.audioContext.destination);
   }
