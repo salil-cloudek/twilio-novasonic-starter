@@ -160,10 +160,19 @@ export default function Home() {
   }, [setRecordingWithDebug]);
 
   const startRecording = useCallback(() => {
-    console.log('[Start Recording]');
+    console.log('[Start Recording]', {
+      hasWebsocket: !!wsRef.current,
+      readyState: wsRef.current?.readyState,
+      readyStateText: wsRef.current?.readyState === WebSocket.OPEN ? 'OPEN' : 
+                      wsRef.current?.readyState === WebSocket.CONNECTING ? 'CONNECTING' : 
+                      wsRef.current?.readyState === WebSocket.CLOSING ? 'CLOSING' : 'CLOSED'
+    });
     setRecordingWithDebug(true);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('[Start Recording] Sending start_audio message to backend');
       wsRef.current.send('start_audio');
+    } else {
+      console.error('[Start Recording] WebSocket not ready!');
     }
   }, [setRecordingWithDebug]);
 
@@ -171,7 +180,10 @@ export default function Home() {
     console.log('[Stop Recording]');
     setRecordingWithDebug(false);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('[Stop Recording] Sending stop_audio message to backend');
       wsRef.current.send('stop_audio');
+    } else {
+      console.error('[Stop Recording] WebSocket not ready!');
     }
   }, [setRecordingWithDebug]);
 

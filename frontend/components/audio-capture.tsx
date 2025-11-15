@@ -89,6 +89,14 @@ export class AudioCaptureService {
     this.rollingBuffer = new RollingBuffer();
   }
 
+  updateWebsocket(websocket: WebSocket | null) {
+    console.log('[AudioCaptureService] Updating websocket reference', { 
+      hasWebsocket: !!websocket, 
+      readyState: websocket?.readyState 
+    });
+    this.websocket = websocket;
+  }
+
   private detectSilence(audioData: Float32Array): boolean {
     const rms = Math.sqrt(
       audioData.reduce((sum, value) => sum + value * value, 0) / audioData.length
@@ -112,8 +120,15 @@ export class AudioCaptureService {
   }
 
   private sendAudioData(audioData: Int16Array) {
-    if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) return;
+    if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
+      console.warn('[AudioCaptureService] Cannot send audio - websocket not ready', {
+        hasWebsocket: !!this.websocket,
+        readyState: this.websocket?.readyState
+      });
+      return;
+    }
     
+    console.log(`[AudioCaptureService] Sending audio chunk: ${audioData.length} samples (${audioData.byteLength} bytes)`);
     // Send the buffer directly as binary
     this.websocket.send(audioData.buffer);
   }
@@ -266,12 +281,18 @@ export default function AudioCapture({ websocket, isCapturing, onError, inline, 
     if (!canvasRef.current) return;
     
     if (!captureServiceRef.current) {
+      console.log('[AudioCapture] Creating new AudioCaptureService');
       captureServiceRef.current = new AudioCaptureService(websocket, setIsThinking || undefined);
+    } else {
+      // Update websocket reference when it changes
+      captureServiceRef.current.updateWebsocket(websocket);
     }
 
     if (isCapturing) {
+      console.log('[AudioCapture] Starting capture');
       captureServiceRef.current.start(canvasRef.current).catch(onError);
     } else {
+      console.log('[AudioCapture] Stopping capture');
       captureServiceRef.current.stop();
     }
 
