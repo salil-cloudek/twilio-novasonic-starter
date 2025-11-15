@@ -36,17 +36,25 @@ export default function Home() {
   }, []);
 
   const connect = () => {
+    console.log('[Connect] Attempting to connect to:', WS_URL);
     if (wsRef.current) wsRef.current.close();
     wsRef.current = new WebSocket(WS_URL);
     setStatus('Connecting...');
     setWsKey(k => k + 1);
     
-    wsRef.current.onopen = () => setStatus('Connected');
-    wsRef.current.onclose = () => {
+    wsRef.current.onopen = () => {
+      console.log('[WebSocket] Connected successfully');
+      setStatus('Connected');
+    };
+    wsRef.current.onclose = (event) => {
+      console.log('[WebSocket] Connection closed', event.code, event.reason);
       setStatus('Disconnected');
       setRecordingWithDebug(false);
     };
-    wsRef.current.onerror = () => setStatus('Error');
+    wsRef.current.onerror = (error) => {
+      console.error('[WebSocket] Error:', error);
+      setStatus('Error');
+    };
     wsRef.current.onmessage = (event) => {
       if (typeof event.data === 'string') {
         try {
