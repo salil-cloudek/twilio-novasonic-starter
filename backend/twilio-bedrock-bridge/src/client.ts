@@ -671,9 +671,19 @@ export class NovaSonicBidirectionalStreamClient {
     // Both AWS samples send tool results as JSON strings using json.dumps()
     let contentString = '';
     if (result.content && Array.isArray(result.content) && result.content.length > 0) {
-      // If content is an array of objects with text, extract and send as JSON
-      const contentData = result.content.map((item: any) => item.text).join('\n');
-      contentString = JSON.stringify({ result: contentData });
+      // Check if content contains JSON objects (structured data)
+      const firstItem = result.content[0];
+      if (firstItem.json) {
+        // Content is structured JSON - send it directly
+        contentString = JSON.stringify(firstItem.json);
+      } else if (firstItem.text) {
+        // Content is text - wrap in result object
+        const contentData = result.content.map((item: any) => item.text).join('\n');
+        contentString = JSON.stringify({ result: contentData });
+      } else {
+        // Unknown format - send the entire result as JSON
+        contentString = JSON.stringify(result);
+      }
     } else if (typeof result.content === 'string') {
       contentString = JSON.stringify({ result: result.content });
     } else {

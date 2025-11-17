@@ -297,7 +297,7 @@ export const DEFAULT_CONFIG: Partial<UnifiedConfig> = {
     autoExecuteTools: true, // Safe for read-only KB queries
     toolExecutionTimeoutMs: 10000, // 10 seconds
     enableOrchestratorFallback: true, // Safe during migration
-    maxResults: 3, // Balance between context and token usage
-    minRelevanceScore: 0.5, // Only include relevant results
+    maxResults: 5, // Increased to capture more results including lower confidence matches
+    minRelevanceScore: 0.2, // Lowered threshold to include Result #4 with classifications
   },
 };

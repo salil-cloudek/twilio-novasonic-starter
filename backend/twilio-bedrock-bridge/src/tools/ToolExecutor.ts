@@ -153,8 +153,8 @@ export class ToolExecutor {
     
     // Get RAG configuration for filtering results
     const ragConfig = configManager.rag;
-    const maxResults = ragConfig?.maxResults ?? 3;
-    const minRelevanceScore = ragConfig?.minRelevanceScore ?? 0.5;
+    const maxResults = ragConfig?.maxResults ?? 5;
+    const minRelevanceScore = ragConfig?.minRelevanceScore ?? 0.2;
     
     logger.debug('Querying knowledge base', {
       correlationId,
@@ -224,9 +224,9 @@ export class ToolExecutor {
    * Nova Sonic expects results in a specific format. This method converts
    * our internal search results to that format.
    * 
-   * Important: We format the results as raw information without any
-   * commentary like "Here's what I found" - Nova Sonic will naturally
-   * incorporate this into its response.
+   * We send results as structured JSON with individual relevance scores,
+   * allowing Nova Sonic to prioritize which results to use and make more
+   * intelligent decisions about response quality.
    * 
    * @param toolUseId - Tool use ID from the request
    * @param searchResult - Internal search results
@@ -243,21 +243,24 @@ export class ToolExecutor {
       );
     }
     
-    // Format results as a single text block for Nova Sonic
-    // Nova Sonic will use this information to answer the user's question
-    const formattedContent = searchResult.results
-      .map((result, index) => {
-        // For voice, we keep it concise - no need for source citations
-        // Nova Sonic will naturally paraphrase this information
-        return result.content;
-      })
-      .join('\n\n');
+    // Format results as structured JSON with individual relevance scores
+    // This allows Nova Sonic to see the quality of each result and prioritize accordingly
+    const structuredResults = {
+      query: searchResult.query,
+      resultCount: searchResult.resultCount,
+      results: searchResult.results.map((result, index) => ({
+        index: index + 1,
+        content: result.content,
+        relevanceScore: result.relevanceScore,
+        source: result.source
+      }))
+    };
     
     return {
       toolUseId,
       content: [
         {
-          text: formattedContent
+          json: structuredResults
         }
       ],
       status: 'success'
