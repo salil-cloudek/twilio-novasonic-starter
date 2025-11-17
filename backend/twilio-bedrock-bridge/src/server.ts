@@ -8,7 +8,7 @@ initializeTracing();
 // Node.js built-ins
 import { Buffer } from 'node:buffer';
 import http from 'http';
-import path from 'path';
+import { URL } from 'node:url';
 
 // External packages
 import express from 'express';
@@ -16,6 +16,7 @@ import express from 'express';
 // Internal modules - handlers
 import { HealthHandler } from './handlers/HealthHandler';
 import { initWebsocketServer } from './handlers/WebsocketHandler';
+import { initBrowserWebsocketServer } from './handlers/BrowserWebsocketHandler';
 import { WebhookHandler, WebhookRequest } from './handlers/WebhookHandler';
 
 // Internal modules - observability
@@ -34,6 +35,47 @@ import { correlationMiddleware } from './utils/correlationId';
 const app = express();
 const server = http.createServer(app);
 
+// Initialize WebSocket servers in noServer mode so we can manually route upgrades
+const mediaWebsocketServer = initWebsocketServer();
+const browserWebsocketServer = initBrowserWebsocketServer();
+
+// Capture and route every incoming upgrade attempt for diagnostics
+server.on('upgrade', (req, socket, head) => {
+  logger.info('HTTP upgrade requested', {
+    url: req.url,
+    headers: req.headers,
+    method: req.method,
+    remoteAddress: req.socket.remoteAddress,
+    upgrade: req.headers['upgrade'],
+    connection: req.headers['connection']
+  });
+
+  const pathname = (() => {
+    try {
+      return new URL(req.url ?? '', 'http://localhost').pathname;
+    } catch {
+      return req.url || '';
+    }
+  })();
+
+  if (pathname === '/media') {
+    mediaWebsocketServer.handleUpgrade(req, socket, head, (ws, request) => {
+      mediaWebsocketServer.emit('connection', ws, request);
+    });
+    return;
+  }
+
+  if (pathname === '/ws') {
+    browserWebsocketServer.handleUpgrade(req, socket, head, (ws, request) => {
+      browserWebsocketServer.emit('connection', ws, request);
+    });
+    return;
+  }
+
+  logger.warn('Unhandled WebSocket upgrade path - closing socket', { pathname });
+  socket.destroy();
+});
+
 
 
 // Capture raw body for webhook validation
@@ -48,8 +90,8 @@ app.use('/webhook', express.json({ type: ['application/json', 'application/*+jso
 app.use('/webhook', express.urlencoded({ extended: true, verify: saveRawBody }));
 
 
-// WebSocket server for Twilio Media Streams (Twilio connects to /media)
-initWebsocketServer(server);
+// WebSocket servers are initialized above; manual upgrade routing ensures
+// dedicated handlers per path without conflicting WebSocketServer instances.
 
 // Webhook and health endpoints
 app.post('/webhook', (req: any, res: any) => {

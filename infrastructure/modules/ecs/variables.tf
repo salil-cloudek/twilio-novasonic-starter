@@ -169,11 +169,11 @@ variable "rag_enable_fallback" {
 variable "rag_max_results" {
   description = "Maximum number of results from knowledge base"
   type        = number
-  default     = 3
+  default     = 5
 }
 
 variable "rag_min_relevance_score" {
   description = "Minimum relevance score (0.0 - 1.0) for knowledge base results"
   type        = number
-  default     = 0.5
+  default     = 0.2
 }

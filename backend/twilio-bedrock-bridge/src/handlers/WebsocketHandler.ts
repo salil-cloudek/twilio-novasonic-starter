@@ -74,9 +74,9 @@ const bedrockClient = new NovaSonicBidirectionalStreamClient({
  * This moves the WebSocket-related logic out of server.ts for better separation of concerns.
  * Includes comprehensive security validation for all incoming connections.
  */
-export function initWebsocketServer(server: http.Server): void {
+export function initWebsocketServer(server?: http.Server): WebSocketServer {
   const wss = new WebSocketServer({ 
-    server, 
+    ...(server ? { server } : { noServer: true }),
     path: '/media',
     perMessageDeflate: false, // Disable compression for real-time audio streaming
     verifyClient: (info: { req: http.IncomingMessage }) => {
@@ -732,4 +732,5 @@ export function initWebsocketServer(server: http.Server): void {
   });
 
   logger.info('WebSocket server initialized on /media path');
+  return wss;
 }

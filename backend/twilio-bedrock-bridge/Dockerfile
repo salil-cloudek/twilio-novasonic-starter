@@ -54,11 +54,11 @@ COPY --from=build --chown=nodejs:nodejs /app/dist ./dist
 USER nodejs
 
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 8080
 
 # Add health check using Kubernetes liveness probe
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health/liveness || exit 1
+    CMD curl -f http://localhost:8080/health/liveness || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

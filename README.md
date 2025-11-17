@@ -1,19 +1,28 @@
 # Twilio Nova Sonic Starter
 
-Enterprise-grade real-time bridge service that connects Twilio Voice calls to AWS Bedrock Nova Sonic for AI-powered voice conversations with knowledge base integration and intelligent agents.
+Enterprise-grade real-time bridge service that connects Twilio Voice calls to AWS Bedrock Nova Sonic for AI-powered voice conversations with knowledge base integration, intelligent agents, and a modern web interface.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-This repository contains a complete production-ready solution with advanced AI capabilities, cost-optimized infrastructure, and automatic knowledge management.
+This repository contains a complete production-ready solution with advanced AI capabilities, cost-optimized infrastructure, automatic knowledge management, and both phone and web-based interfaces.
 
 ## Features
 
 ### 🎯 Core Voice Capabilities
 - **Real-time Bidirectional Streaming**: Ultra-low latency audio streaming between Twilio and AWS Bedrock Nova Sonic
+- **Multi-Channel Access**: Phone-based (Twilio) and web-based (browser) interfaces
 - **Advanced Session Management**: Concurrent session handling with automatic cleanup and resource management
 - **Intelligent Audio Processing**: Automatic format conversion, quality analysis, and adaptive buffering
 - **Real-time Interruption Support**: Natural conversation flow with voice activity detection and model interruption
 - **Production-Ready Security**: Webhook signature validation, WebSocket security, and rate limiting
+
+### 🌐 Web Interface (NEW)
+- **Browser-Based Conversations**: Speak with Nova Sonic directly from your web browser
+- **Real-Time Audio Streaming**: WebSocket-based bidirectional audio with visual waveform display
+- **Modern UI**: Next.js 14 with TypeScript, Tailwind CSS, and responsive design
+- **Session Management**: Connect/disconnect controls with status indicators
+- **Message History**: Synchronized text and audio output display
+- **Cross-Platform**: Works on desktop and mobile browsers
 
 ### 🧠 AI Knowledge & Agent Integration
 - **Bedrock Knowledge Bases**: Automatic document ingestion with Aurora Serverless vector storage (95% cost savings vs OpenSearch)
@@ -279,6 +288,34 @@ docker run -p 8080:8080 \
   -e AWS_REGION=us-east-1 \
   twilio-bedrock-bridge
 ```
+
+### 7. Web Frontend Setup (Optional)
+
+For browser-based voice conversations:
+
+```bash
+cd frontend
+npm install
+
+# Configure backend URL (optional - defaults to localhost:8080)
+echo "NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws" > .env.local
+
+# Start development server
+npm run dev
+```
+
+Open http://localhost:3000:
+1. Click **Power** to connect to backend
+2. Click **Mic** to start speaking
+3. Converse naturally with Nova Sonic
+
+For production deployment:
+```bash
+npm run build
+npm start
+```
+
+See [frontend/README.md](frontend/README.md) for detailed documentation.
 
 ## 🚀 Advanced Features
 

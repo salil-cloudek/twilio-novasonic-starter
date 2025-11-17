@@ -121,6 +121,9 @@ resource "aws_lb_target_group" "ecs_service" {
     cookie_duration = 86400 # 24 hours
   }
 
+  # Longer deregistration delay for WebSocket connections
+  deregistration_delay = 300
+
   tags = var.tags
 }
 
@@ -146,6 +149,12 @@ resource "aws_lb_listener_rule" "websocket" {
   action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs_service.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/media", "/ws"]
+    }
   }
 
   condition {
@@ -195,6 +204,12 @@ resource "aws_lb_listener_rule" "websocket_https" {
   action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs_service.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/media", "/ws"]
+    }
   }
 
   condition {

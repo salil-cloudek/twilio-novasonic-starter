@@ -109,7 +109,7 @@ export class KnowledgeBaseService {
   private readonly knowledgeBaseClient: KnowledgeBaseClient;
   private readonly enabledKnowledgeBases: KnowledgeBaseConfig[];
   private readonly defaultMaxResponseLength = 500; // Reasonable for voice
-  private readonly defaultMinConfidence = 0.3; // Lower threshold for voice assistance
+  private readonly defaultMinConfidence = 0.2; // Lower threshold to capture more relevant results
 
   // ============================================================================
   // CONSTRUCTOR
@@ -176,6 +176,20 @@ export class KnowledgeBaseService {
           enableRetry ? maxRetries : 0,
           sessionId
         );
+
+        // Log all results with their scores for debugging
+        logger.info('Knowledge base results with scores', {
+          totalResults: allResults.length,
+          minConfidence,
+          results: allResults.map((r, idx) => ({
+            index: idx + 1,
+            score: r.confidence,
+            passesThreshold: r.confidence >= minConfidence,
+            source: r.source,
+            contentPreview: r.content.substring(0, 150) + '...',
+          })),
+          sessionId,
+        });
 
         // Filter results by confidence
         const filteredResults = allResults.filter(result => result.confidence >= minConfidence);
@@ -383,7 +397,7 @@ export class KnowledgeBaseService {
     }
 
     // Take the best results and combine them
-    const topResults = results.slice(0, 3); // Limit to top 3 for voice
+    const topResults = results.slice(0, 5); // Limit to top 5 for better coverage
     let responseText = '';
     const sources: string[] = [];
     let totalConfidence = 0;
