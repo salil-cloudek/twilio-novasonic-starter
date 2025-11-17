@@ -1,7 +1,7 @@
 # SNS Topic for CloudWatch Alarms
 resource "aws_sns_topic" "cloudwatch_alarms" {
   name = "${var.service_name}-cloudwatch-alarms"
-  
+
   tags = var.tags
 }
 
@@ -17,7 +17,7 @@ resource "aws_sns_topic_policy" "cloudwatch_alarms" {
         Principal = {
           Service = "cloudwatch.amazonaws.com"
         }
-        Action = "SNS:Publish"
+        Action   = "SNS:Publish"
         Resource = aws_sns_topic.cloudwatch_alarms.arn
         Condition = {
           StringEquals = {
@@ -32,7 +32,7 @@ resource "aws_sns_topic_policy" "cloudwatch_alarms" {
 # SNS Topic Subscriptions
 resource "aws_sns_topic_subscription" "email_notifications" {
   count = length(var.notification_emails)
-  
+
   topic_arn = aws_sns_topic.cloudwatch_alarms.arn
   protocol  = "email"
   endpoint  = var.notification_emails[count.index]
@@ -40,7 +40,7 @@ resource "aws_sns_topic_subscription" "email_notifications" {
 
 resource "aws_sns_topic_subscription" "slack_webhook" {
   count = var.slack_webhook_url != null ? 1 : 0
-  
+
   topic_arn = aws_sns_topic.cloudwatch_alarms.arn
   protocol  = "https"
   endpoint  = var.slack_webhook_url
@@ -106,15 +106,15 @@ resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
   treat_missing_data  = "notBreaching"
 
   metric_query {
-    id = "error_rate"
+    id          = "error_rate"
     return_data = true
-    
+
     metric {
       metric_name = "HTTPCode_Target_5XX_Count"
       namespace   = "AWS/ApplicationELB"
       period      = 300
       stat        = "Sum"
-      
+
       dimensions = {
         TargetGroup = var.target_group_arn_suffix
       }
@@ -122,15 +122,15 @@ resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
   }
 
   metric_query {
-    id = "total_requests"
+    id          = "total_requests"
     return_data = false
-    
+
     metric {
       metric_name = "RequestCount"
       namespace   = "AWS/ApplicationELB"
       period      = 300
       stat        = "Sum"
-      
+
       dimensions = {
         TargetGroup = var.target_group_arn_suffix
       }
@@ -138,9 +138,9 @@ resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
   }
 
   metric_query {
-    id = "error_percentage"
+    id          = "error_percentage"
     return_data = false
-    expression = "(error_rate / total_requests) * 100"
+    expression  = "(error_rate / total_requests) * 100"
   }
 
   tags = var.tags
@@ -173,7 +173,7 @@ resource "aws_cloudwatch_metric_alarm" "high_event_loop_lag" {
   namespace           = "TwilioBedrockBridge"
   period              = "300"
   statistic           = "Average"
-  threshold           = "0.1"  # 100ms in seconds
+  threshold           = "0.1" # 100ms in seconds
   alarm_description   = "This metric monitors Node.js event loop lag"
   alarm_actions       = [aws_sns_topic.cloudwatch_alarms.arn]
   ok_actions          = [aws_sns_topic.cloudwatch_alarms.arn]
@@ -230,9 +230,9 @@ resource "aws_cloudwatch_metric_alarm" "websocket_connection_rate_spike" {
   treat_missing_data  = "notBreaching"
 
   metric_query {
-    id = "connection_rate"
+    id          = "connection_rate"
     return_data = true
-    
+
     metric {
       metric_name = "twilio_bridge_websocket_connections_total"
       namespace   = "TwilioBedrockBridge"
@@ -248,7 +248,7 @@ resource "aws_cloudwatch_metric_alarm" "websocket_connection_rate_spike" {
 resource "aws_cloudwatch_composite_alarm" "system_health_critical" {
   alarm_name        = "${var.service_name}-system-health-critical"
   alarm_description = "Composite alarm for critical system health issues"
-  
+
   alarm_rule = join(" OR ", [
     "ALARM(${aws_cloudwatch_metric_alarm.high_memory_usage.alarm_name})",
     "ALARM(${aws_cloudwatch_metric_alarm.high_error_rate.alarm_name})",
@@ -667,11 +667,11 @@ resource "aws_cloudwatch_dashboard" "monitoring_dashboard" {
           metrics = [
             ["TwilioBedrockBridge", "twilio_bridge_websocket_connections_active"]
           ]
-          view    = "singleValue"
-          region  = var.region
-          title   = "Active WebSocket Connections"
-          period  = 300
-          stat    = "Maximum"
+          view   = "singleValue"
+          region = var.region
+          title  = "Active WebSocket Connections"
+          period = 300
+          stat   = "Maximum"
         }
       },
       {
@@ -685,11 +685,11 @@ resource "aws_cloudwatch_dashboard" "monitoring_dashboard" {
           metrics = [
             ["TwilioBedrockBridge", "twilio_bridge_stale_sessions_count"]
           ]
-          view    = "singleValue"
-          region  = var.region
-          title   = "Stale Sessions"
-          period  = 300
-          stat    = "Maximum"
+          view   = "singleValue"
+          region = var.region
+          title  = "Stale Sessions"
+          period = 300
+          stat   = "Maximum"
         }
       },
       {
@@ -703,11 +703,11 @@ resource "aws_cloudwatch_dashboard" "monitoring_dashboard" {
           metrics = [
             ["AWS/ECS", "MemoryUtilization", "ServiceName", var.ecs_service_name, "ClusterName", var.ecs_cluster_name]
           ]
-          view    = "singleValue"
-          region  = var.region
-          title   = "Memory Utilization %"
-          period  = 300
-          stat    = "Average"
+          view   = "singleValue"
+          region = var.region
+          title  = "Memory Utilization %"
+          period = 300
+          stat   = "Average"
         }
       },
       {
@@ -721,11 +721,11 @@ resource "aws_cloudwatch_dashboard" "monitoring_dashboard" {
           metrics = [
             ["TwilioBedrockBridge", "twilio_bridge_event_loop_lag_seconds"]
           ]
-          view    = "singleValue"
-          region  = var.region
-          title   = "Event Loop Lag (ms)"
-          period  = 300
-          stat    = "Average"
+          view   = "singleValue"
+          region = var.region
+          title  = "Event Loop Lag (ms)"
+          period = 300
+          stat   = "Average"
         }
       },
 
@@ -741,11 +741,11 @@ resource "aws_cloudwatch_dashboard" "monitoring_dashboard" {
           metrics = [
             ["AWS/CloudWatch", "MetricCount", { "label" = "Alarm Status" }]
           ]
-          view    = "singleValue"
-          region  = var.region
-          title   = "Alarm Status Overview"
-          period  = 300
-          stat    = "Sum"
+          view   = "singleValue"
+          region = var.region
+          title  = "Alarm Status Overview"
+          period = 300
+          stat   = "Sum"
         }
       }
     ]
@@ -770,10 +770,10 @@ resource "aws_cloudwatch_dashboard" "operational_insights" {
         height = 6
 
         properties = {
-          query   = "SOURCE '${var.cloudwatch_log_group_name}'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 100"
-          region  = var.region
-          title   = "Recent Error Logs"
-          view    = "table"
+          query  = "SOURCE '${var.cloudwatch_log_group_name}'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 100"
+          region = var.region
+          title  = "Recent Error Logs"
+          view   = "table"
         }
       },
       {

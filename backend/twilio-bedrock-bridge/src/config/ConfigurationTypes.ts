@@ -42,6 +42,47 @@ export interface AudioConfig {
   enableQualityAnalysis: boolean;
 }
 
+// RAG (Retrieval-Augmented Generation) Configuration
+export interface RAGConfig {
+  /**
+   * Enable RAG via tool use
+   * When true, Nova Sonic uses tools to query knowledge bases
+   * When false, uses legacy orchestrator-based routing
+   */
+  useToolBasedRAG: boolean;
+  
+  /**
+   * Automatically execute tool requests from Nova Sonic
+   * Should be true for read-only knowledge base queries (safe)
+   * Set to false if you want manual approval of tool execution
+   */
+  autoExecuteTools: boolean;
+  
+  /**
+   * Maximum time to wait for tool execution (milliseconds)
+   * If exceeded, tool execution is cancelled
+   */
+  toolExecutionTimeoutMs: number;
+  
+  /**
+   * Enable fallback to orchestrator if tool execution fails
+   * Provides graceful degradation during migration or failures
+   */
+  enableOrchestratorFallback: boolean;
+  
+  /**
+   * Maximum number of results to return from knowledge base queries
+   * Higher values provide more context but use more tokens
+   */
+  maxResults: number;
+  
+  /**
+   * Minimum relevance score (0.0 - 1.0) for knowledge base results
+   * Results below this threshold are filtered out
+   */
+  minRelevanceScore: number;
+}
+
 // Twilio Configuration
 export interface TwilioConfig {
   authToken: string;
@@ -142,6 +183,7 @@ export interface UnifiedConfig {
   inference: InferenceConfig;
   audio: AudioConfig;
   integration: IntegrationConfig;
+  rag: RAGConfig;
 }
 
 // Configuration Schema for validation
@@ -249,5 +291,13 @@ export const DEFAULT_CONFIG: Partial<UnifiedConfig> = {
       agentInvocationTimeoutMs: 10000,
       maxRetries: 2,
     },
+  },
+  rag: {
+    useToolBasedRAG: false, // Default: disabled for safe rollout
+    autoExecuteTools: true, // Safe for read-only KB queries
+    toolExecutionTimeoutMs: 10000, // 10 seconds
+    enableOrchestratorFallback: true, // Safe during migration
+    maxResults: 3, // Balance between context and token usage
+    minRelevanceScore: 0.5, // Only include relevant results
   },
 };

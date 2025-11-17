@@ -80,7 +80,7 @@ variable "ecr_encryption_type" {
 variable "ecr_force_delete" {
   description = "If true, will delete the repository even if it contains images. Use with caution."
   type        = bool
-  default     = false  # More conservative for staging
+  default     = false # More conservative for staging
 }
 
 # SSL Certificate Variables
@@ -106,25 +106,25 @@ variable "hosted_zone_id" {
 variable "log_level" {
   description = "Log level for the application (debug, info, warn, error)"
   type        = string
-  default     = "info"  # Less verbose for staging
+  default     = "info" # Less verbose for staging
 }
 
 variable "enable_debug_logging" {
   description = "Enable debug logging"
   type        = bool
-  default     = false  # Disabled for staging
+  default     = false # Disabled for staging
 }
 
 variable "enable_nova_debug_logging" {
   description = "Enable Nova Sonic debug logging"
   type        = bool
-  default     = false  # Disabled for staging
+  default     = false # Disabled for staging
 }
 
 variable "cloudwatch_log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number
-  default     = 14  # Longer retention for staging
+  default     = 14 # Longer retention for staging
 }
 
 # Twilio Configuration Variables
@@ -299,13 +299,13 @@ variable "agent_alias_name" {
 variable "agent_action_groups" {
   description = "List of action groups for the agent"
   type = list(object({
-    name                           = string
-    description                    = string
-    state                         = optional(string, "ENABLED")
-    lambda_function_arn           = optional(string)
-    api_schema                    = optional(string)
-    create_lambda_function        = optional(bool, false)
-    lambda_function_code          = optional(string)
+    name                         = string
+    description                  = string
+    state                        = optional(string, "ENABLED")
+    lambda_function_arn          = optional(string)
+    api_schema                   = optional(string)
+    create_lambda_function       = optional(bool, false)
+    lambda_function_code         = optional(string)
     lambda_handler               = optional(string, "index.handler")
     lambda_runtime               = optional(string, "python3.11")
     lambda_timeout               = optional(number, 30)
@@ -317,16 +317,16 @@ variable "agent_action_groups" {
 variable "agent_prompt_override_configuration" {
   description = "Prompt override configuration for the agent"
   type = object({
-    base_prompt_template    = string
-    maximum_length         = optional(number, 2048)
-    stop_sequences         = optional(list(string), [])
-    temperature           = optional(number, 0.7)
-    top_k                 = optional(number, 250)
-    top_p                 = optional(number, 0.999)
-    parser_mode           = optional(string, "DEFAULT")
-    prompt_creation_mode  = optional(string, "OVERRIDDEN")
-    prompt_state          = optional(string, "ENABLED")
-    prompt_type           = optional(string, "ORCHESTRATION")
+    base_prompt_template = string
+    maximum_length       = optional(number, 2048)
+    stop_sequences       = optional(list(string), [])
+    temperature          = optional(number, 0.7)
+    top_k                = optional(number, 250)
+    top_p                = optional(number, 0.999)
+    parser_mode          = optional(string, "DEFAULT")
+    prompt_creation_mode = optional(string, "OVERRIDDEN")
+    prompt_state         = optional(string, "ENABLED")
+    prompt_type          = optional(string, "ORCHESTRATION")
   })
   default = null
 }

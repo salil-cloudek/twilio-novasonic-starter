@@ -91,16 +91,16 @@ variable "auto_ingestion_log_retention_days" {
 }
 
 variable "s3_inclusion_prefixes" {
-  description = "List of S3 prefixes to include in the data source"
+  description = "List of S3 prefixes to include in the data source. Use 'documents/' as default folder."
   type        = list(string)
-  default     = []
+  default     = ["documents/"]
 }
 
 variable "chunking_strategy" {
   description = "Chunking strategy for document processing (FIXED_SIZE, NONE)"
   type        = string
   default     = "FIXED_SIZE"
-  
+
   validation {
     condition     = contains(["FIXED_SIZE", "NONE"], var.chunking_strategy)
     error_message = "Chunking strategy must be either FIXED_SIZE or NONE."
@@ -111,7 +111,7 @@ variable "max_tokens" {
   description = "Maximum number of tokens per chunk (only used with FIXED_SIZE chunking)"
   type        = number
   default     = 300
-  
+
   validation {
     condition     = var.max_tokens >= 1 && var.max_tokens <= 8192
     error_message = "Max tokens must be between 1 and 8192."
@@ -122,7 +122,7 @@ variable "overlap_percentage" {
   description = "Percentage of overlap between chunks (only used with FIXED_SIZE chunking)"
   type        = number
   default     = 20
-  
+
   validation {
     condition     = var.overlap_percentage >= 1 && var.overlap_percentage <= 99
     error_message = "Overlap percentage must be between 1 and 99."

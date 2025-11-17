@@ -8,6 +8,7 @@ initializeTracing();
 // Node.js built-ins
 import { Buffer } from 'node:buffer';
 import http from 'http';
+import path from 'path';
 
 // External packages
 import express from 'express';

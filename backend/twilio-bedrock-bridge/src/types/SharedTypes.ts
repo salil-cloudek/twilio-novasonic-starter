@@ -166,6 +166,8 @@ export interface ExtendedWebSocket extends WebSocket {
   id?: string;
   /** Correlation context for request tracking */
   correlationContext?: CorrelationContext;
+  /** Client type: 'twilio' or 'browser' */
+  clientType?: 'twilio' | 'browser';
   /** Twilio incoming sequence number */
   _twilioInSeq?: number;
   /** Twilio outgoing sequence number */

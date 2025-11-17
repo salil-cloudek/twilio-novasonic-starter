@@ -62,7 +62,7 @@ variable "ecr_repository_name" {
 variable "ecr_image_tag_mutability" {
   description = "The tag mutability setting for the repository. Must be one of: MUTABLE or IMMUTABLE"
   type        = string
-  default     = "IMMUTABLE"  # Immutable for production security
+  default     = "IMMUTABLE" # Immutable for production security
 }
 
 variable "ecr_scan_on_push" {
@@ -74,13 +74,13 @@ variable "ecr_scan_on_push" {
 variable "ecr_encryption_type" {
   description = "The encryption type to use for the repository. Valid values are AES256 or KMS"
   type        = string
-  default     = "KMS"  # KMS encryption for production
+  default     = "KMS" # KMS encryption for production
 }
 
 variable "ecr_force_delete" {
   description = "If true, will delete the repository even if it contains images. Use with caution."
   type        = bool
-  default     = false  # Never force delete in production
+  default     = false # Never force delete in production
 }
 
 # SSL Certificate Variables
@@ -106,25 +106,25 @@ variable "hosted_zone_id" {
 variable "log_level" {
   description = "Log level for the application (debug, info, warn, error)"
   type        = string
-  default     = "warn"  # Production should be warn or error
+  default     = "warn" # Production should be warn or error
 }
 
 variable "enable_debug_logging" {
   description = "Enable debug logging"
   type        = bool
-  default     = false  # Never enable debug in production
+  default     = false # Never enable debug in production
 }
 
 variable "enable_nova_debug_logging" {
   description = "Enable Nova Sonic debug logging"
   type        = bool
-  default     = false  # Never enable debug in production
+  default     = false # Never enable debug in production
 }
 
 variable "cloudwatch_log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number
-  default     = 90  # Longer retention for production compliance
+  default     = 90 # Longer retention for production compliance
 }
 
 # Twilio Configuration Variables
@@ -138,7 +138,7 @@ variable "twilio_auth_token" {
 variable "verify_twilio_signature" {
   description = "Enable/disable Twilio signature verification"
   type        = bool
-  default     = true  # Always verify in production
+  default     = true # Always verify in production
 }
 
 # CloudWatch Alarms Notification Variables
@@ -159,13 +159,13 @@ variable "slack_webhook_url" {
 variable "knowledge_base_arns" {
   description = "List of Bedrock Knowledge Base ARNs that the service can access (deprecated - use external_knowledge_base_arns)"
   type        = list(string)
-  default     = []  # Empty by default for production security - must be explicitly configured
+  default     = [] # Empty by default for production security - must be explicitly configured
 }
 
 variable "agent_arns" {
   description = "List of Bedrock Agent ARNs that the service can invoke (deprecated - use external_agent_arns)"
   type        = list(string)
-  default     = []  # Empty by default for production security - must be explicitly configured
+  default     = [] # Empty by default for production security - must be explicitly configured
 }
 
 # New Bedrock Knowledge Base Module Variables
@@ -299,13 +299,13 @@ variable "agent_alias_name" {
 variable "agent_action_groups" {
   description = "List of action groups for the agent"
   type = list(object({
-    name                           = string
-    description                    = string
-    state                         = optional(string, "ENABLED")
-    lambda_function_arn           = optional(string)
-    api_schema                    = optional(string)
-    create_lambda_function        = optional(bool, false)
-    lambda_function_code          = optional(string)
+    name                         = string
+    description                  = string
+    state                        = optional(string, "ENABLED")
+    lambda_function_arn          = optional(string)
+    api_schema                   = optional(string)
+    create_lambda_function       = optional(bool, false)
+    lambda_function_code         = optional(string)
     lambda_handler               = optional(string, "index.handler")
     lambda_runtime               = optional(string, "python3.11")
     lambda_timeout               = optional(number, 30)
@@ -317,16 +317,16 @@ variable "agent_action_groups" {
 variable "agent_prompt_override_configuration" {
   description = "Prompt override configuration for the agent"
   type = object({
-    base_prompt_template    = string
-    maximum_length         = optional(number, 2048)
-    stop_sequences         = optional(list(string), [])
-    temperature           = optional(number, 0.7)
-    top_k                 = optional(number, 250)
-    top_p                 = optional(number, 0.999)
-    parser_mode           = optional(string, "DEFAULT")
-    prompt_creation_mode  = optional(string, "OVERRIDDEN")
-    prompt_state          = optional(string, "ENABLED")
-    prompt_type           = optional(string, "ORCHESTRATION")
+    base_prompt_template = string
+    maximum_length       = optional(number, 2048)
+    stop_sequences       = optional(list(string), [])
+    temperature          = optional(number, 0.7)
+    top_k                = optional(number, 250)
+    top_p                = optional(number, 0.999)
+    parser_mode          = optional(string, "DEFAULT")
+    prompt_creation_mode = optional(string, "OVERRIDDEN")
+    prompt_state         = optional(string, "ENABLED")
+    prompt_type          = optional(string, "ORCHESTRATION")
   })
   default = null
 }

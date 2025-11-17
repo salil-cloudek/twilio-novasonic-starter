@@ -29,7 +29,7 @@ output "dashboard_names" {
 output "alarm_names" {
   description = "Names of all created CloudWatch alarms"
   value = {
-    high_memory_usage                = aws_cloudwatch_metric_alarm.high_memory_usage.alarm_name
+    high_memory_usage               = aws_cloudwatch_metric_alarm.high_memory_usage.alarm_name
     custom_memory_usage             = aws_cloudwatch_metric_alarm.custom_memory_usage.alarm_name
     high_error_rate                 = aws_cloudwatch_metric_alarm.high_error_rate.alarm_name
     custom_error_rate               = aws_cloudwatch_metric_alarm.custom_error_rate.alarm_name

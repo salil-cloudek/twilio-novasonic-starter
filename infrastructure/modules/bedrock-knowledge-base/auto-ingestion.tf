@@ -1,12 +1,12 @@
 # Lambda function for automatic ingestion (always enabled)
 resource "aws_lambda_function" "auto_ingestion" {
-  filename         = data.archive_file.auto_ingestion_zip.output_path
-  function_name    = "${var.knowledge_base_name}-auto-ingestion"
-  role            = aws_iam_role.auto_ingestion_role.arn
-  handler         = "index.handler"
-  runtime         = "python3.11"
-  timeout         = 300
-  
+  filename      = data.archive_file.auto_ingestion_zip.output_path
+  function_name = "${var.knowledge_base_name}-auto-ingestion"
+  role          = aws_iam_role.auto_ingestion_role.arn
+  handler       = "index.handler"
+  runtime       = "python3.11"
+  timeout       = 300
+
   source_code_hash = data.archive_file.auto_ingestion_zip.output_base64sha256
 
   environment {
@@ -23,7 +23,7 @@ resource "aws_lambda_function" "auto_ingestion" {
 data "archive_file" "auto_ingestion_zip" {
   type        = "zip"
   output_path = "${path.module}/auto_ingestion.zip"
-  
+
   source {
     content = templatefile("${path.module}/lambda/auto_ingestion.py", {
       knowledge_base_id = aws_bedrockagent_knowledge_base.main.id

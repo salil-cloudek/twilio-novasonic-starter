@@ -175,6 +175,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
       inference: this.loadInferenceConfig(),
       audio: this.loadAudioConfig(),
       integration: this.loadIntegrationConfig(),
+      rag: this.loadRAGConfig(),
     };
 
     // Apply test defaults if in test environment
@@ -408,6 +409,57 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
         agentInvocationTimeoutMs: this.parseNumber(process.env.AGENT_INVOCATION_TIMEOUT_MS, DEFAULT_CONFIG.integration!.thresholds.agentInvocationTimeoutMs),
         maxRetries: this.parseNumber(process.env.MAX_RETRIES, DEFAULT_CONFIG.integration!.thresholds.maxRetries),
       },
+    };
+  }
+
+  /**
+   * Load RAG (Retrieval-Augmented Generation) configuration
+   * Controls how Nova Sonic uses tools to query knowledge bases
+   */
+  private loadRAGConfig(): import('./ConfigurationTypes').RAGConfig {
+    return {
+      // Feature flag: Enable tool-based RAG
+      // Default: false (disabled for safe rollout)
+      // Set AWS_RAG_USE_TOOL_BASED=true to enable
+      useToolBasedRAG: this.parseBoolean(
+        process.env.AWS_RAG_USE_TOOL_BASED,
+        DEFAULT_CONFIG.rag!.useToolBasedRAG
+      ),
+      
+      // Auto-execute tool requests from Nova Sonic
+      // Default: true (safe for read-only knowledge base queries)
+      autoExecuteTools: this.parseBoolean(
+        process.env.AWS_RAG_AUTO_EXECUTE_TOOLS,
+        DEFAULT_CONFIG.rag!.autoExecuteTools
+      ),
+      
+      // Tool execution timeout in milliseconds
+      // Default: 10000 (10 seconds)
+      toolExecutionTimeoutMs: this.parseNumber(
+        process.env.AWS_RAG_TOOL_TIMEOUT_MS,
+        DEFAULT_CONFIG.rag!.toolExecutionTimeoutMs
+      ),
+      
+      // Enable fallback to orchestrator if tool execution fails
+      // Default: true (provides graceful degradation)
+      enableOrchestratorFallback: this.parseBoolean(
+        process.env.AWS_RAG_ENABLE_FALLBACK,
+        DEFAULT_CONFIG.rag!.enableOrchestratorFallback
+      ),
+      
+      // Maximum number of results from knowledge base
+      // Default: 3 (balance between context and token usage)
+      maxResults: this.parseNumber(
+        process.env.AWS_RAG_MAX_RESULTS,
+        DEFAULT_CONFIG.rag!.maxResults
+      ),
+      
+      // Minimum relevance score (0.0 - 1.0)
+      // Default: 0.5 (only include relevant results)
+      minRelevanceScore: this.parseFloat(
+        process.env.AWS_RAG_MIN_RELEVANCE_SCORE,
+        DEFAULT_CONFIG.rag!.minRelevanceScore
+      ),
     };
   }
 
@@ -827,7 +879,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
   // Private property for watcher
   private watcher?: any;
 
-  // Convenience getters for backward compatibility
+  // Configuration getters
   public get server() { return this.config.server; }
   public get aws() { return this.config.aws; }
   public get bedrock() { return this.config.bedrock; }
@@ -841,6 +893,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
   public get inference() { return this.config.inference; }
   public get audio() { return this.config.audio; }
   public get integration() { return this.config.integration; }
+  public get rag() { return this.config.rag; }
 }
 
 // Export singleton instance
